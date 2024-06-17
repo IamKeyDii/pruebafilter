@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 
 @SpringBootApplication
 public class PruebaFilterApplication implements CommandLineRunner {
@@ -30,10 +31,11 @@ public class PruebaFilterApplication implements CommandLineRunner {
 	
 	@Override
 	public void run (String... args) throws Exception {
+		
 		ObjectMapper objectMapper = new ObjectMapper();
 		List<Book> books = Collections.emptyList();
-
-		String filter = "Potter";
+		BookService bookservice = new BookService();
+		Scanner scanner = new Scanner(System.in);
 
 		try{
 			//leemos el archivo json
@@ -44,18 +46,31 @@ public class PruebaFilterApplication implements CommandLineRunner {
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		BookService bookservice = new BookService();
-		Optional<BookDate> result = bookservice.filter(filter, books);
-
-		result.ifPresent(bookDate -> {
-			System.out.println("Resultado encontrado:");
-			System.out.println("Título: " + bookDate.getTitle());
-			System.out.println("Resumen: " + bookDate.getSummary());
-			System.out.println("Fecha de publicación: " + bookDate.getPublicationDate());
-			System.out.println("Fecha formateada: " + bookDate.getDate());
-			System.out.println("Biografía del autor: " + bookDate.getAuthor().getBio());
-		});
+		
+		while (true){
+			System.out.println("Introduce la palabra para filtrar ('-1' para salir): ");
+			String filter = scanner.nextLine();
+			
+			if("-1".equalsIgnoreCase(filter)){
+				System.out.println("Hasta pronto!");
+				break;
+			}
+			
+			Optional<BookDate> result = bookservice.filter(filter, books);
+			
+			if(result.isPresent()) {
+				BookDate bookDate = result.get();
+					System.out.println("Resultado encontrado:");
+					System.out.println("Título: " + bookDate.getTitle());
+					System.out.println("Resumen: " + bookDate.getSummary());
+					System.out.println("Fecha de publicación: " + bookDate.getPublicationDate());
+					System.out.println("Fecha formateada: " + bookDate.getDate());
+					System.out.println("Biografía del autor: " + bookDate.getAuthor().getBio());
+			}else{
+				System.out.println("No se encontraron resultados para tu búsqueda ("+filter+")...prueba con otra palabra.");
+			}
+		}
+		scanner.close();
 	}
 
 }
