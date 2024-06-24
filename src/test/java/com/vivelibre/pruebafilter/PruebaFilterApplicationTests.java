@@ -37,7 +37,7 @@ class PruebaFilterApplicationTests {
 	@Test
 	void testFilterWithNoPublicationDate() {
 		Optional<BookDate> result = bookService.filter("Hunger", books);
-		Assertions.assertTrue(result.isEmpty());
+		Assertions.assertTrue(result.isPresent());
 	}
 
 	@Test

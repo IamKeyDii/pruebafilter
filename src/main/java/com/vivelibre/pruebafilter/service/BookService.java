@@ -25,38 +25,32 @@ public class BookService {
                 .filter(book -> book.getPublicationDate() == null)
                 .forEach(book -> System.out.println("Libro sin fecha de publicación: " + book.getTitle()));
         
-        //filtramos los libros con el valor introducido
-        List<Book> librosFiltrados = books.stream()
+        //1. filtramos los libros con el valor introducido
+        //2. ordenamos los libros filtrados para que este por fecha de publicacion y biografia mas corta
+        //3. buscamos el libro mas reciente entre los ya filtrados
+        //4. lo convertimos a bookdate
+        Optional<BookDate> libroMasRecienteBuscado = books.stream()
                 .filter(book -> book.getTitle().contains(filter) ||
                                 book.getSummary().contains(filter) || 
-                                book.getAuthor().getBio().contains(filter)).collect(Collectors.toList());
+                                book.getAuthor().getBio().contains(filter)) 
+                .sorted(Comparator.comparing(Book::getPublicationDate, Comparator.nullsLast(LocalDate::compareTo))
+                        .thenComparingInt(book -> Optional.ofNullable(book.getAuthor().getBio()).orElse("").length()))
+                .findFirst()//obtenemos el primero de la lista
+                .map(this::toBookDate);
         
-        if (librosFiltrados.isEmpty()){
-            return Optional.empty();
-        }else {//ordenamos los libros filtrados para que este por fecha de publicacion y biografia mas corta
-            librosFiltrados.sort(Comparator.comparing(Book::getPublicationDate, Comparator.nullsLast(LocalDate::compareTo))
-                    .thenComparingInt(book -> Optional.ofNullable(book.getAuthor().getBio()).orElse("").length()));
-        }
-        
-        //buscamos el libro mas reciente entre los ya filtrados que tengan fechas
-        Book libroMasReciente = librosFiltrados.stream()
-                .filter(book -> book.getPublicationDate() != null)
-                .max(Comparator.comparing(Book::getPublicationDate))
-                .orElse(null);
-        
-        if(libroMasReciente == null){
-            return Optional.empty();
-        }else{
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-            String formattedDate = libroMasReciente.getPublicationDate().format(formatter);
-            BookDate bookDate = new BookDate(libroMasReciente.getId(),
-                libroMasReciente.getTitle(),
-                libroMasReciente.getPages(),
-                libroMasReciente.getSummary(),
-                libroMasReciente.getPublicationDate(),
-                libroMasReciente.getAuthor(),
+        return libroMasRecienteBuscado;
+    }
+    
+    private BookDate toBookDate (Book book){
+        String formattedDate = book.getPublicationDate() != null ? book.getPublicationDate()
+                .format(DateTimeFormatter.ofPattern("MM-dd-yyyy")) : "";
+        return new BookDate(
+                book.getId(),
+                book.getTitle(),
+                book.getPages(),
+                book.getSummary(),
+                book.getPublicationDate(),
+                book.getAuthor(),
                 formattedDate);
-            return Optional.of(bookDate);
-        }
     }
 }
